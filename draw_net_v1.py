@@ -26,10 +26,12 @@ def main():
 
         # 메인 윈도우 생성
     main_window = make_rect(background_size)
+
     if channel == 4:
-        b,g,r = cv2.split(main_window)
+        b,g,r,a = cv2.split(main_window)
         alpha = np.ones(main_window.shape[:2], dtype=np.uint8) * 0
         main_window=cv2.merge((b,g,r,alpha))
+
     elif channel ==1:
         main_window = cv2.cvtColor(main_window,cv2.COLOR_BGR2GRAY)
 
