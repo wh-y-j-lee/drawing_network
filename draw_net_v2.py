@@ -19,7 +19,7 @@ def main():
     background_size = (256,256)
 
         # 원하는 사각형 사이즈 (세로, 가로)
-    filter_size = (100,150)
+    filter_size = (100,100)
 
         #channel 설정
     channel = 4
@@ -67,7 +67,7 @@ def main():
         # TODO: 테마 색 지정하기??
 
 
-    c1 = dr_net.random_color('purple',threshold1=50, threshold2=70)
+    c1 = dr_net.random_color('yellow',threshold1=30, threshold2=70)
     c2 = dr_net.random_color('red', threshold1=30,threshold2=70)
     # c3 = dr_net.random_color('red', threshold1=30, threshold2=70)
     ''' 
@@ -82,6 +82,8 @@ def main():
         c2 = random_color((255,255),threshold1=0), black ~ white 조절, alpha 조절 가능
         c2 = random_color((255),threshold1=0), black ~ white 조절, alpha 255
     '''
+    c1 = dr_net.random_color((255, 0,255,70), threshold1=0, threshold2=0, threshold3=0)
+    c1 = dr_net.random_color((0, 0, 255, 70), threshold1=0, threshold2=0, threshold3=0)
     rect_r1 = dr_net.make_rect(filter_size, c1)
     rect_r2 = dr_net.make_rect(filter_size, c2)
     # rect_r3 = make_rect(filter_size, c3)
@@ -99,7 +101,7 @@ def main():
         # iter - iteration of drawing rectangles
         # interval - x, y interval between rectangles
         # forward - True, False
-
+    dr_net.set_3d_rect(main_window,(center_y,center_x),(100,50,100,45), 2 ,(75,75,75),1)
 
     cv2.imwrite('test.png',main_window)
     cv2.imshow('window',main_window)
@@ -165,7 +167,7 @@ class draw_net():
             elif len(templete)==2:
                 color = (random.randint(templete[0] - threshold1, templete[0] + threshold1),
                          random.randint(templete[0] - threshold1, templete[0] + threshold1),
-                         random.randint(templete[0] - threshold1, templete[0] + threshold1), templete[3])
+                         random.randint(templete[0] - threshold1, templete[0] + threshold1), templete[1])
             elif len(templete)==1:
                 color = (random.randint(templete[0] - threshold1, templete[0] + threshold1),
                          random.randint(templete[0] - threshold1, templete[0] + threshold1),
@@ -176,6 +178,54 @@ class draw_net():
             return color[:3]
         elif channel ==1:
             return color[0]
+
+    def set_3d_rect(self,src, center, size, interval, color=(255, 255, 255), direction=1):
+        # size(width,height,length,angle)
+
+        '''              '4  '5         '   '
+                        '0  '1 '6      '   ''
+                        '2  '3         '   '
+        '''
+        rect = self.make_rect(size[:2], color)
+        width = size[0]
+        height = size[1]
+        length = size[2]
+        if direction == 1:
+            angle = size[3]
+        elif direction == 2:
+            angle = 180 - size[3]
+        l_1 = int(length * np.cos(angle / 180 * np.pi))
+        l_2 = int(length * np.sin(angle / 180 * np.pi))
+        point_0 = center
+        point_1 = (center[0] + size[1], center[1])
+        point_2 = (center[0], center[1] + size[0])
+        point_3 = (center[0] + size[1], center[1] + size[0])
+        point_4 = (center[0] + l_1, center[1] - l_2)
+        point_5 = (center[0] + l_1 + size[1], center[1] - l_2)
+        if direction == 1:
+            point_6 = (point_3[0] + l_1, point_3[1] - l_2)
+        elif direction == 2:
+            point_6 = (point_2[0] + l_1, point_2[1] - l_2)
+
+        # TODO 1: 1st Rect (윗면)
+        # if direction == 1:
+        cv2.fillConvexPoly(src, np.array((point_0, point_1, point_5, point_4), dtype=int), color)
+        # elif direction == 2:
+        #     cv2.fillConvexPoly(src, np.array(((point_0[0]-interval,point_0[1]), (point_1[0]-interval,point_1[1]), point_5, point_4), dtype=int), color)
+        # TODO 2: 2st Rect (정면)
+        if direction == 1:
+            self.set_rect(src, rect, (center[0] + interval, center[1] - interval))
+        elif direction == 2:
+            self.set_rect(src, rect, (center[0], center[1] + interval))
+        # TODO 3: 3st Rect (옆면)
+        if direction == 1:
+            cv2.fillConvexPoly(src, np.array(
+                ((point_1[0], point_1[1] + interval), point_3, point_6, (point_5[0], point_5[1] + interval)),
+                dtype=int), color)
+        elif direction == 2:
+            cv2.fillConvexPoly(src, np.array(
+                ((point_0[0], point_0[1] + interval), point_2, point_6, (point_4[0], point_4[1] + interval)),
+                dtype=int), color)
 
 if __name__ == '__main__':
     main()
